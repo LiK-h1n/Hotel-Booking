@@ -1,19 +1,21 @@
 import pandas as pd
 
-df = pd.read_csv("hotels.csv", dtype={"id": str})
+df_hotels = pd.read_csv("hotels.csv", dtype={"id": str})
+df_cards = pd.read_csv("cards.csv", dtype=str).to_dict(orient="records")
+df_card_security = pd.read_csv("card_security.csv", dtype=str)
 
 
 class Hotel:
     def __init__(self, hotel_id):
         self.hotel_id = hotel_id
-        self.hotel_name = df.loc[df["id"] == self.hotel_id, "name"].squeeze()
+        self.hotel_name = df_hotels.loc[df_hotels["id"] == self.hotel_id, "name"].squeeze()
 
     def book(self):
-        df.loc[df["id"] == self.hotel_id, "available"] = "no"
-        df.to_csv("hotels.csv", index=False)
+        df_hotels.loc[df_hotels["id"] == self.hotel_id, "available"] = "no"
+        df_hotels.to_csv("hotels.csv", index=False)
 
     def available(self):
-        if df.loc[df["id"] == self.hotel_id, "available"].squeeze() == "yes":
+        if df_hotels.loc[df_hotels["id"] == self.hotel_id, "available"].squeeze() == "yes":
             return True
         return False
 
@@ -24,23 +26,36 @@ class ReservationTicket:
         self.hotel_object = hotel_object
 
     def generate(self):
-        content = f"""
-        Thank you for your reservation!
-        Here are your booking details:
-        Name: {self.customer_name}
-        Hotel: {self.hotel_object.hotel_name}
-        """
+        content = f"\nThank you for your reservation!\nHere are your booking details:\nName: {self.customer_name}\n" \
+                  f"Hotel: {self.hotel_object.hotel_name}"
         return content
 
 
-print(df)
-input_id = input("Enter the id of the hotel: ")
-hotel = Hotel(input_id)
+class CreditCard:
+    def __init__(self, creditcard_no):
+        self.creditcard_no = creditcard_no
 
+    def validate(self, creditcard_expiration_date, creditcard_cvc, creditcard_holder):
+        if {"number": self.creditcard_no, "expiration": creditcard_expiration_date, "cvc": creditcard_cvc,
+            "holder": creditcard_holder} in df_cards:
+            return True
+        return False
+
+
+print(df_hotels)
+input_id = input("\nEnter the ID of the Hotel: ")
+hotel = Hotel(input_id)
 if hotel.available():
-    hotel.book()
-    input_name = input("Enter your name: ")
-    reservation_ticket = ReservationTicket(input_name, hotel)
-    print(reservation_ticket.generate())
+    input_fullname = input("\nEnter your full name: ")
+    input_creditcard_no = input("Enter your credit card number: ")
+    input_creditcard_expiration_date = input("Enter your credit card expiration date: ")
+    input_creditcard_cvc = input("Enter your credit cvc: ")
+    credit_card = CreditCard(input_creditcard_no)
+    if credit_card.validate(input_creditcard_expiration_date, input_creditcard_cvc, input_fullname.upper()):
+        reservation_ticket = ReservationTicket(input_fullname, hotel)
+        print(reservation_ticket.generate())
+        hotel.book()
+    else:
+        print("\nThere was a problem with your payment.")
 else:
-    print("Hotel is not free")
+    print("\nHotel is not free.")
