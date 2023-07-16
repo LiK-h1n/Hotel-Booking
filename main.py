@@ -42,6 +42,14 @@ class CreditCard:
         return False
 
 
+class SecureCreditCard(CreditCard):
+    def authenticate(self, secure_creditcard_password):
+        if df_card_security.loc[df_card_security["number"] == self.creditcard_no, "password"].squeeze() \
+                == secure_creditcard_password:
+            return True
+        return False
+
+
 print(df_hotels)
 input_id = input("\nEnter the ID of the Hotel: ")
 hotel = Hotel(input_id)
@@ -50,12 +58,16 @@ if hotel.available():
     input_creditcard_no = input("Enter your credit card number: ")
     input_creditcard_expiration_date = input("Enter your credit card expiration date: ")
     input_creditcard_cvc = input("Enter your credit cvc: ")
-    credit_card = CreditCard(input_creditcard_no)
-    if credit_card.validate(input_creditcard_expiration_date, input_creditcard_cvc, input_fullname.upper()):
-        reservation_ticket = ReservationTicket(input_fullname, hotel)
-        print(reservation_ticket.generate())
-        hotel.book()
+    input_creditcard_password = input("Enter your password: ")
+    secure_creditcard = SecureCreditCard(input_creditcard_no)
+    if secure_creditcard.validate(input_creditcard_expiration_date, input_creditcard_cvc, input_fullname.upper()):
+        if secure_creditcard.authenticate(input_creditcard_password):
+            reservation_ticket = ReservationTicket(input_fullname, hotel)
+            print(reservation_ticket.generate())
+            hotel.book()
+        else:
+            print("\nCredit card authentication failed.")
     else:
         print("\nThere was a problem with your payment.")
 else:
-    print("\nHotel is not free.")
+    print("\nHotel is not available.")
